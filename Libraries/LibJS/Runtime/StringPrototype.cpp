@@ -87,6 +87,7 @@ void StringPrototype::initialize(Interpreter& interpreter, GlobalObject& global_
     define_native_function("includes", includes, 1, attr);
     define_native_function("slice", slice, 2, attr);
     define_native_function("lastIndexOf", last_index_of, 1, attr);
+    define_native_function("valueOf", value_of, 0, attr);
 }
 
 StringPrototype::~StringPrototype()
@@ -426,6 +427,14 @@ JS_DEFINE_NATIVE_FUNCTION(StringPrototype::last_index_of)
     }
 
     return Value(-1);
+}
+
+JS_DEFINE_NATIVE_FUNCTION(StringPrototype::value_of)
+{
+    auto* string_object = typed_this(interpreter, global_object);
+    if (!string_object)
+        return {};
+    return js_string(interpreter, string_object->primitive_string().string());
 }
 
 }

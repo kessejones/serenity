@@ -59,6 +59,7 @@ private:
     JS_DECLARE_NATIVE_FUNCTION(includes);
     JS_DECLARE_NATIVE_FUNCTION(slice);
     JS_DECLARE_NATIVE_FUNCTION(last_index_of);
+    JS_DECLARE_NATIVE_FUNCTION(value_of);
 };
 
 }
