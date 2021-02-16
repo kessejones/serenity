@@ -80,6 +80,7 @@ void ArrayPrototype::initialize(GlobalObject& global_object)
     define_native_function(vm.names.splice, splice, 2, attr);
     define_native_function(vm.names.fill, fill, 1, attr);
     define_native_function(vm.names.values, values, 0, attr);
+    define_native_function(vm.names.flat, flat, 0, attr);
     define_property(vm.names.length, Value(0), Attribute::Configurable);
 
     // Use define_property here instead of define_native_function so that
@@ -1034,4 +1035,42 @@ JS_DEFINE_NATIVE_FUNCTION(ArrayPrototype::values)
     return ArrayIterator::create(global_object, this_object, Object::PropertyKind::Value);
 }
 
+static void recursive_array_flat(GlobalObject& global_object, JS::Array& new_array, JS::Array& array, i32 depth, bool is_infinity)
+{
+    auto array_length = length_of_array_like(global_object, array);
+    for (size_t j = 0; j < array_length; ++j) {
+        auto value = array.get(j);
+        if ((depth > 0 || is_infinity) && value.is_array()) {
+            recursive_array_flat(global_object, new_array, value.as_array(), depth - 1, is_infinity);
+            continue;
+        }
+        if (!value.is_empty())
+            new_array.indexed_properties().append(value);
+    }
+}
+
+JS_DEFINE_NATIVE_FUNCTION(ArrayPrototype::flat)
+{
+    auto* this_array = Array::typed_this(vm, global_object);
+    auto* new_array = Array::create(global_object);
+
+    i32 depth = 1;
+    bool is_infinity = false;
+    if (vm.argument_count() == 1) {
+        auto depth_argument = vm.argument(0);
+        if (!depth_argument.is_undefined()) {
+            if (depth_argument.is_negative_infinity()) {
+                depth = 0;
+            } else if (depth_argument.is_positive_infinity()) {
+                is_infinity = true;
+            } else {
+                auto argumento_depth = depth_argument.to_i32(global_object);
+                depth = max(argumento_depth, 0);
+            }
+        }
+    }
+
+    recursive_array_flat(global_object, *new_array, *this_array, depth, is_infinity);
+    return new_array;
+}
 }
